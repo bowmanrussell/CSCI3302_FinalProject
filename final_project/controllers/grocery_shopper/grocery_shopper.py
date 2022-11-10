@@ -158,29 +158,29 @@ while robot.step(timestep) != -1:
 
        #print("Rho: %f Alpha: %f rx: %f ry: %f wx: %f wy: %f" % (rho,alpha,rx,ry,wx,wy))
 
-        #if rho < LIDAR_SENSOR_MAX_RANGE:
+        # if rho < LIDAR_SENSOR_MAX_RANGE:
 
 
-           # You will eventually REPLACE the following 3 lines with a more robust version of the map
-           # with a grayscale drawing containing more levels than just 0 and 1.
-            # try:
-                # map[int(wx*30)][360-int(wy*30)] = map[int(wx*30)][360-int(wy*30)] + .01
+           # #You will eventually REPLACE the following 3 lines with a more robust version of the map
+           # #with a grayscale drawing containing more levels than just 0 and 1.
+             # try:
+                 # map[180+int(wx*12)][180+int(wy*12)] = map[180+int(wx*12)][180+int(wy*12)] + .01
 
 
-                # color = (map[int(wx*30)][360-int(wy*30)]*256**2+map[int(wx*30)][360-int(wy*30)]*256+map[int(wx*30)][360-int(wy*30)])*255
-                # if map[int(wx*30)][360-int(wy*30)] + .01 >= 1: 
-                    # map[int(wx*30)][360-int(wy*30)] = 1
-                    # display.setColor(0xFFFFFF)
-                    # display.drawPixel(int(wx*30),360-int(wy*30))
-                # else: 
-                    # display.setColor(int(color))
-                    # display.drawPixel(int(wx*30),360-int(wy*30))
-            # except: pass
+                 # color = (map[180+int(wx*12)][180+int(wy*12)]*256**2+map[180+int(wx*12)][180+int(wy*12)]*256+map[180+int(wx*12)][180+int(wy*12)])*255
+                 # if map[180+int(wx*12)][180+int(wy*12)] + .005 >= 1: 
+                     # map[180+int(wx*12)][180+int(wy*12)] = 1
+                     # display.setColor(0xFFFFFF)
+                     # display.drawPixel(180+int(wx*12),180+int(wy*12))
+                 # else: 
+                     # display.setColor(int(color))
+                     # display.drawPixel(180+int(wx*12),180+int(wy*12))
+             # except: pass
    # Draw the robot's current pose on the 360x360 display
     display.setColor(int(0xFF0000))
 
    #print(pose_x,pose_y,pose_theta)
-    display.drawPixel(360-int(pose_x*12),int(pose_y*12))
+    display.drawPixel(180+int(pose_x*12),180+int(pose_y*12))
 
    ###################
    #

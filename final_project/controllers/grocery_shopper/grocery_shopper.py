@@ -54,6 +54,10 @@ camera = robot.getDevice('camera')
 camera.enable(timestep)
 camera.recognitionEnable(timestep)
 
+#Enable keyboard for remore control
+keyboard = robot.getKeyboard()
+keyboard.enable(timestep)
+
 # Enable GPS and compass localization
 gps = robot.getDevice("gps")
 gps.enable(timestep)
@@ -82,7 +86,12 @@ lidar_offsets = lidar_offsets[83:len(lidar_offsets)-83] # Only keep lidar readin
 
 map = None
 
+#states
+mode =  'manual' # mapping
 
+
+#initialize map
+map = np.empty((360,360)) 
 
 # ------------------------------------------------------------------
 # Helper Functions
@@ -92,7 +101,6 @@ gripper_status="closed"
 
 # Main Loop
 while robot.step(timestep) != -1:
-    
     
     robot_parts["wheel_left_joint"].setVelocity(vL)
     robot_parts["wheel_right_joint"].setVelocity(vR)
@@ -109,3 +117,119 @@ while robot.step(timestep) != -1:
         robot_parts["gripper_right_finger_joint"].setPosition(0.045)
         if left_gripper_enc.getValue()>=0.044:
             gripper_status="open"
+
+
+       ###################
+   #
+   # Mapping
+   #
+   ###################
+
+   ################ v [Begin] Do not modify v ##################
+   # Ground truth pose
+    pose_y = -gps.getValues()[1]
+    pose_x = -gps.getValues()[0]
+
+    n = compass.getValues()
+    rad = ((math.atan2(n[0], -n[2])))#-1.5708)
+    pose_theta = rad
+
+    lidar_sensor_readings = lidar.getRangeImage()
+    lidar_sensor_readings = lidar_sensor_readings[83:len(lidar_sensor_readings)-83]
+
+    for i, rho in enumerate(lidar_sensor_readings):
+        alpha = lidar_offsets[i]
+
+        if rho > LIDAR_SENSOR_MAX_RANGE:
+            continue
+
+       # The Webots coordinate system doesn't match the robot-centric axes we're used to
+        rx = -math.cos(alpha)*rho + 0.202
+        ry = math.sin(alpha)*rho -0.004
+
+
+       # Convert detection from robot coordinates into world coordinates
+        wx =  math.cos(pose_theta)*rx - math.sin(pose_theta)*ry + pose_x
+        wy =  -(math.sin(pose_theta)*rx + math.cos(pose_theta)*ry) + pose_y
+
+
+
+       ################ ^ [End] Do not modify ^ ##################
+
+       #print("Rho: %f Alpha: %f rx: %f ry: %f wx: %f wy: %f" % (rho,alpha,rx,ry,wx,wy))
+
+        #if rho < LIDAR_SENSOR_MAX_RANGE:
+
+
+           # You will eventually REPLACE the following 3 lines with a more robust version of the map
+           # with a grayscale drawing containing more levels than just 0 and 1.
+            # try:
+                # map[int(wx*30)][360-int(wy*30)] = map[int(wx*30)][360-int(wy*30)] + .01
+
+
+                # color = (map[int(wx*30)][360-int(wy*30)]*256**2+map[int(wx*30)][360-int(wy*30)]*256+map[int(wx*30)][360-int(wy*30)])*255
+                # if map[int(wx*30)][360-int(wy*30)] + .01 >= 1: 
+                    # map[int(wx*30)][360-int(wy*30)] = 1
+                    # display.setColor(0xFFFFFF)
+                    # display.drawPixel(int(wx*30),360-int(wy*30))
+                # else: 
+                    # display.setColor(int(color))
+                    # display.drawPixel(int(wx*30),360-int(wy*30))
+            # except: pass
+   # Draw the robot's current pose on the 360x360 display
+    display.setColor(int(0xFF0000))
+
+   #print(pose_x,pose_y,pose_theta)
+    display.drawPixel(360-int(pose_x*12),int(pose_y*12))
+
+   ###################
+   #
+   # Controller
+   #
+   ###################
+    if mode == 'manual':
+        key = keyboard.getKey()
+        while(keyboard.getKey() != -1): pass
+        if key == keyboard.LEFT :
+            vL = -MAX_SPEED/2
+            vR = MAX_SPEED
+        elif key == keyboard.RIGHT:
+            vL = MAX_SPEED
+            vR = -MAX_SPEED/2
+        elif key == keyboard.UP:
+            vL = MAX_SPEED
+            vR = MAX_SPEED
+        elif key == keyboard.DOWN:
+            vL = -MAX_SPEED
+            vR = -MAX_SPEED
+        elif key == ord(' '):
+            vL = 0
+            vR = 0
+        elif key == ord('S'):
+           # Part 1.4: Filter map and save to filesystem
+            map = map > 0.5
+            map = 1* map            
+            np.save("map.npy",map)
+            print("Map file saved")
+        elif key == ord('L'):
+           # You will not use this portion in Part 1 but here's an example for loading saved a numpy array
+            map = np.load("map.npy")
+            print("Map loaded")
+        else: # slow down
+            vL *= 0.75
+            vR *= 0.75
+    else: # not manual mode
+        x = 1
+
+
+   # Odometry code. Don't change vL or vR speeds after this line.
+   # We are using GPS and compass for this lab to get a better pose but this is how you'll do the odometry
+    pose_x += (vL+vR)/2/MAX_SPEED*MAX_SPEED_MS*timestep/1000.0*math.cos(pose_theta)
+    pose_y -= (vL+vR)/2/MAX_SPEED*MAX_SPEED_MS*timestep/1000.0*math.sin(pose_theta)
+    pose_theta += (vR-vL)/AXLE_LENGTH/MAX_SPEED*MAX_SPEED_MS*timestep/1000.0
+
+   #print("X: %f Z: %f Theta: %f" % (pose_x, pose_y, pose_theta))
+
+   # Actuator commands
+    robot_parts["wheel_left_joint"].setVelocity(vL)
+    robot_parts["wheel_right_joint"].setVelocity(vR)

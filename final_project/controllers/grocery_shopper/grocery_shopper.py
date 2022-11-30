@@ -5,6 +5,7 @@
 from controller import Robot
 import math
 import numpy as np
+from matplotlib import pyplot as plt
 
 #Initialization
 print("=== Initializing Grocery Shopper...")
@@ -81,7 +82,8 @@ vL = 0
 vR = 0
 
 lidar_sensor_readings = [] # List to hold sensor readings
-lidar_offsets = np.linspace(-LIDAR_ANGLE_RANGE/2., +LIDAR_ANGLE_RANGE/2., LIDAR_ANGLE_BINS)
+lidar_offsets = np.linspace(LIDAR_ANGLE_RANGE/2., +LIDAR_ANGLE_RANGE/2., LIDAR_ANGLE_BINS)
+#lidat_angle_range was negative
 lidar_offsets = lidar_offsets[83:len(lidar_offsets)-83] # Only keep lidar readings not blocked by robot chassis
 
 map = None
@@ -127,11 +129,11 @@ while robot.step(timestep) != -1:
 
    ################ v [Begin] Do not modify v ##################
    # Ground truth pose
-    pose_y = -gps.getValues()[1]
-    pose_x = -gps.getValues()[0]
+    pose_y = gps.getValues()[1]
+    pose_x = gps.getValues()[0]
 
     n = compass.getValues()
-    rad = ((math.atan2(n[0], -n[2])))#-1.5708)
+    rad = ((math.atan2(n[0], n[1])))#-1.5708)
     pose_theta = rad
 
     lidar_sensor_readings = lidar.getRangeImage()
@@ -150,7 +152,8 @@ while robot.step(timestep) != -1:
 
        # Convert detection from robot coordinates into world coordinates
         wx =  math.cos(pose_theta)*rx - math.sin(pose_theta)*ry + pose_x
-        wy =  -(math.sin(pose_theta)*rx + math.cos(pose_theta)*ry) + pose_y
+        wy =  (math.sin(pose_theta)*rx + math.cos(pose_theta)*ry) + pose_y
+        #was negative
 
 
 
@@ -158,24 +161,24 @@ while robot.step(timestep) != -1:
 
        #print("Rho: %f Alpha: %f rx: %f ry: %f wx: %f wy: %f" % (rho,alpha,rx,ry,wx,wy))
 
-        # if rho < LIDAR_SENSOR_MAX_RANGE:
+        if rho < 2:
 
 
            # #You will eventually REPLACE the following 3 lines with a more robust version of the map
            # #with a grayscale drawing containing more levels than just 0 and 1.
-             # try:
-                 # map[180+int(wx*12)][180+int(wy*12)] = map[180+int(wx*12)][180+int(wy*12)] + .01
-
-
-                 # color = (map[180+int(wx*12)][180+int(wy*12)]*256**2+map[180+int(wx*12)][180+int(wy*12)]*256+map[180+int(wx*12)][180+int(wy*12)])*255
-                 # if map[180+int(wx*12)][180+int(wy*12)] + .005 >= 1: 
-                     # map[180+int(wx*12)][180+int(wy*12)] = 1
-                     # display.setColor(0xFFFFFF)
-                     # display.drawPixel(180+int(wx*12),180+int(wy*12))
-                 # else: 
-                     # display.setColor(int(color))
-                     # display.drawPixel(180+int(wx*12),180+int(wy*12))
-             # except: pass
+            try:
+                map[180+int(wx*12)][180+int(wy*12)] = map[180+int(wx*12)][180+int(wy*12)] + .005
+    
+    
+                color = (map[180+int(wx*12)][180+int(wy*12)]*256**2+map[180+int(wx*12)][180+int(wy*12)]*256+map[180+int(wx*12)][180+int(wy*12)]*255)
+                if map[180+int(wx*12)][180+int(wy*12)] + .005 >= 1: 
+                    map[180+int(wx*12)][180+int(wy*12)] = 1
+                    display.setColor(0xFFFFFF)
+                    display.drawPixel(180+int(wx*12),180+int(wy*12))
+                else: 
+                    display.setColor(int(color))
+                    display.drawPixel(180+int(wx*12),180+int(wy*12))
+            except: pass
    # Draw the robot's current pose on the 360x360 display
     display.setColor(int(0xFF0000))
 
@@ -215,6 +218,9 @@ while robot.step(timestep) != -1:
            # You will not use this portion in Part 1 but here's an example for loading saved a numpy array
             map = np.load("map.npy")
             print("Map loaded")
+            plt.imshow(map)
+            plt.show()
+
         else: # slow down
             vL *= 0.75
             vR *= 0.75

@@ -1077,7 +1077,7 @@ DEF beer_bottles Transform {
   ]
 }
 TiagoSteel {
-  translation -5 0 0.088226
+  translation -4.99952 0 0.101571
   rotation 0.483180071765083 0.8754252092156369 -0.012950726576036504 0.02141649739070574
   controller "grocery_shopper"
   cameraSlot [

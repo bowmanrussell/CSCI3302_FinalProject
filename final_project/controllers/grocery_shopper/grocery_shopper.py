@@ -1,4 +1,4 @@
-"""grocery controller."""
+"""grocery controller"""
 
 # Nov 2, 2022
 
@@ -19,7 +19,7 @@ N_PARTS = 12
 LIDAR_ANGLE_BINS = 667
 LIDAR_SENSOR_MAX_RANGE = 5.5 # Meters
 LIDAR_ANGLE_RANGE = math.radians(240)
-
+pi = 3.14159
 # create the Robot instance.
 robot = Robot()
 
@@ -32,7 +32,7 @@ part_names = ("head_2_joint", "head_1_joint", "torso_lift_joint", "arm_1_joint",
               "arm_6_joint",  "arm_7_joint",  "wheel_left_joint", "wheel_right_joint",
               "gripper_left_finger_joint","gripper_right_finger_joint")
 
-# 
+#
 
 # All motors except the wheels are controlled by position control. The wheels
 # are controlled by a velocity controller. We therefore set their position to infinite.
@@ -93,20 +93,19 @@ mode =  'manual' # mapping
 
 
 #initialize map
-map = np.empty((360,360)) 
+map = np.empty((360,360))
 
 # ------------------------------------------------------------------
 # Helper Functions
 
 
 gripper_status="closed"
-
 # Main Loop
 while robot.step(timestep) != -1:
-    
+
     robot_parts["wheel_left_joint"].setVelocity(vL)
     robot_parts["wheel_right_joint"].setVelocity(vR)
-    
+
     if(gripper_status=="open"):
         # Close gripper, note that this takes multiple time steps...
         robot_parts["gripper_left_finger_joint"].setPosition(0)
@@ -149,10 +148,17 @@ while robot.step(timestep) != -1:
         rx = -math.cos(alpha)*rho + 0.202
         ry = math.sin(alpha)*rho -0.004
 
-
+       
        # Convert detection from robot coordinates into world coordinates
-        wx =  math.cos(pose_theta)*rx - math.sin(pose_theta)*ry + pose_x
-        wy =  (math.sin(pose_theta)*rx + math.cos(pose_theta)*ry) + pose_y
+        if((pose_theta > pi/2 and pose_theta < pi) or (pose_theta < -(pi/2) and pose_theta > -pi) ):
+            
+            wy =  -(math.cos(pose_theta)*ry + math.sin(pose_theta)*rx) + pose_y
+        else:
+            wy =  (math.cos(pose_theta)*ry + math.sin(pose_theta)*rx) + pose_y
+           
+           
+        wx =  (math.cos(pose_theta)*rx - math.sin(pose_theta)*ry) + pose_x
+   
         #was negative
 
 
@@ -168,6 +174,7 @@ while robot.step(timestep) != -1:
            # #with a grayscale drawing containing more levels than just 0 and 1.
             try:
                 map[180+int(wx*12)][180+int(wy*12)] = map[180+int(wx*12)][180+int(wy*12)] + .005
+
     
     
                 color = (map[180+int(wx*12)][180+int(wy*12)]*256**2+map[180+int(wx*12)][180+int(wy*12)]*256+map[180+int(wx*12)][180+int(wy*12)]*255)
@@ -176,6 +183,9 @@ while robot.step(timestep) != -1:
                     display.setColor(0xFFFFFF)
                     display.drawPixel(180+int(wx*12),180+int(wy*12))
                 else: 
+
+
+                    color = (map[180+int(wx*12)][180+int(wy*12)]*256**2+map[180+int(wx*12)][180+int(wy*12)]*256+map[180+int(wx*12)][180+int(wy*12)]*255)
                     display.setColor(int(color))
                     display.drawPixel(180+int(wx*12),180+int(wy*12))
             except: pass
@@ -211,7 +221,7 @@ while robot.step(timestep) != -1:
         elif key == ord('S'):
            # Part 1.4: Filter map and save to filesystem
             map = map > 0.5
-            map = 1* map            
+            map = 1* map           
             np.save("map.npy",map)
             print("Map file saved")
         elif key == ord('L'):
@@ -230,11 +240,13 @@ while robot.step(timestep) != -1:
 
    # Odometry code. Don't change vL or vR speeds after this line.
    # We are using GPS and compass for this lab to get a better pose but this is how you'll do the odometry
-    pose_x += (vL+vR)/2/MAX_SPEED*MAX_SPEED_MS*timestep/1000.0*math.cos(pose_theta)
-    pose_y -= (vL+vR)/2/MAX_SPEED*MAX_SPEED_MS*timestep/1000.0*math.sin(pose_theta)
+    #pose_x += (vL+vR)/2/MAX_SPEED*MAX_SPEED_MS*timestep/1000.0*math.cos(pose_theta)
+    #pose_y -= (vL+vR)/2/MAX_SPEED*MAX_SPEED_MS*timestep/1000.0*math.sin(pose_theta)
+    pose_y = gps.getValues()[1]
+    pose_x = gps.getValues()[0]
     pose_theta += (vR-vL)/AXLE_LENGTH/MAX_SPEED*MAX_SPEED_MS*timestep/1000.0
+    
 
-   #print("X: %f Z: %f Theta: %f" % (pose_x, pose_y, pose_theta))
 
    # Actuator commands
     robot_parts["wheel_left_joint"].setVelocity(vL)

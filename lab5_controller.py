@@ -246,18 +246,12 @@ if mode == 'planner':
    Convolved_map = 1* Convolved_map 
 
 
-   plt.imshow(np.fliplr(Convolved_map))
-
-   plt.imshow(Convolved_map) 
-   plt.show()  
-
 
    # Part 2.3 continuation: Call path_planner
    path = astar(Convolved_map, start, end)
    # Part 2.4: Turn paths into waypoints and save on disk as path.npy and visualize it
    waypoints = []
    ##(int(end_w[0] * 30), 360 - int(end_w[1]* 30))##
-   np.save("path.npy", path)
     
    print('path saved')
 
